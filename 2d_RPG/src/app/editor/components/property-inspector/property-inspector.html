@@ -1,73 +1,124 @@
-<app-docking-panel title="Property Inspector" subtitle="Selection details">
-  <dl class="properties">
-    <div>
-      <dt>Active tool</dt>
-      <dd>{{ editorState.activeTool() }}</dd>
-    </div>
-    <div>
-      <dt>Selected asset</dt>
-      <dd>{{ editorState.selectedAssetId() }}</dd>
-    </div>
-    <div>
-      <dt>Viewport zoom</dt>
-      <dd>{{ editorState.zoom() * 100 }}%</dd>
-    </div>
-
-    <div>
-      <dt>Map</dt>
-      <dd>{{ mapEditor.map().name }} ({{ mapEditor.map().width }}×{{ mapEditor.map().height }})</dd>
-    </div>
-    <div>
-      <dt>Active layer</dt>
-      <dd>{{ mapEditor.activeLayer()?.name }}</dd>
-    </div>
-    <div>
-      <dt>Collision tiles</dt>
-      <dd>{{ mapEditor.collisionSummary().collisionTiles }}</dd>
-    </div>
-    <div>
-      <dt>Blocking objects</dt>
-      <dd>{{ mapEditor.collisionSummary().blockingObjects }}</dd>
-    </div>
-    <div>
-      <dt>Blocking NPCs</dt>
-      <dd>{{ mapEditor.collisionSummary().blockingNpcs }}</dd>
-    </div>
-    <div>
-      <dt>Blocking regions</dt>
-      <dd>{{ mapEditor.collisionSummary().blockingRegions }}</dd>
-    </div>
-  
-    @if (tilesetService.selectedTile(); as tile) {
-      <div>
-        <dt>Selected tile</dt>
-        <dd>#{{ tile.id + 1 }}</dd>
-      </div>
-      <div>
-        <dt>Collision</dt>
-        <dd>{{ tile.collision ? 'Blocked' : 'Open' }}</dd>
-      </div>
-      <div>
-        <dt>Terrain</dt>
-        <dd>{{ tile.terrain }}</dd>
-      </div>
-    }
-  </dl>
-
-  <div class="layer-list" aria-label="Map layers">
-    @for (layer of mapEditor.map().layers; track layer.id) {
-      <button
-        type="button"
-        [class.layer-list__layer--active]="mapEditor.activeLayerId() === layer.id"
-        class="layer-list__layer"
-        (click)="mapEditor.setActiveLayer(layer.id)"
-      >
-        {{ layer.name }}
-        <span>{{ layer.visible ? 'shown' : 'hidden' }}</span>
-      </button>
-      <button type="button" class="layer-list__visibility" (click)="mapEditor.setLayerVisibility(layer.id, !layer.visible)">
-        Toggle {{ layer.name }}
-      </button>
-    }
+<app-docking-panel title="Editor Details" subtitle="Properties and project progress">
+  <div class="inspector-tabs" role="tablist" aria-label="Editor detail tabs">
+    <button
+      type="button"
+      id="properties-tab"
+      class="inspector-tabs__tab"
+      role="tab"
+      [class.inspector-tabs__tab--active]="activeTab() === 'properties'"
+      [attr.aria-selected]="activeTab() === 'properties'"
+      aria-controls="properties-panel"
+      (click)="activeTab.set('properties')"
+    >
+      Properties
+    </button>
+    <button
+      type="button"
+      id="development-tab"
+      class="inspector-tabs__tab"
+      role="tab"
+      [class.inspector-tabs__tab--active]="activeTab() === 'development'"
+      [attr.aria-selected]="activeTab() === 'development'"
+      aria-controls="development-panel"
+      (click)="activeTab.set('development')"
+    >
+      Development
+    </button>
   </div>
+
+  @if (activeTab() === 'properties') {
+    <section id="properties-panel" role="tabpanel" aria-labelledby="properties-tab">
+      <dl class="properties">
+        <div>
+          <dt>Active tool</dt>
+          <dd>{{ editorState.activeTool() }}</dd>
+        </div>
+        <div>
+          <dt>Selected asset</dt>
+          <dd>{{ editorState.selectedAssetId() }}</dd>
+        </div>
+        <div>
+          <dt>Viewport zoom</dt>
+          <dd>{{ editorState.zoom() * 100 }}%</dd>
+        </div>
+
+        <div>
+          <dt>Map</dt>
+          <dd>{{ mapEditor.map().name }} ({{ mapEditor.map().width }}×{{ mapEditor.map().height }})</dd>
+        </div>
+        <div>
+          <dt>Active layer</dt>
+          <dd>{{ mapEditor.activeLayer()?.name }}</dd>
+        </div>
+        <div>
+          <dt>Collision tiles</dt>
+          <dd>{{ mapEditor.collisionSummary().collisionTiles }}</dd>
+        </div>
+        <div>
+          <dt>Blocking objects</dt>
+          <dd>{{ mapEditor.collisionSummary().blockingObjects }}</dd>
+        </div>
+        <div>
+          <dt>Blocking NPCs</dt>
+          <dd>{{ mapEditor.collisionSummary().blockingNpcs }}</dd>
+        </div>
+        <div>
+          <dt>Blocking regions</dt>
+          <dd>{{ mapEditor.collisionSummary().blockingRegions }}</dd>
+        </div>
+
+        @if (tilesetService.selectedTile(); as tile) {
+          <div>
+            <dt>Selected tile</dt>
+            <dd>#{{ tile.id + 1 }}</dd>
+          </div>
+          <div>
+            <dt>Collision</dt>
+            <dd>{{ tile.collision ? 'Blocked' : 'Open' }}</dd>
+          </div>
+          <div>
+            <dt>Terrain</dt>
+            <dd>{{ tile.terrain }}</dd>
+          </div>
+        }
+      </dl>
+
+      <div class="layer-list" aria-label="Map layers">
+        @for (layer of mapEditor.map().layers; track layer.id) {
+          <button
+            type="button"
+            [class.layer-list__layer--active]="mapEditor.activeLayerId() === layer.id"
+            class="layer-list__layer"
+            (click)="mapEditor.setActiveLayer(layer.id)"
+          >
+            {{ layer.name }}
+            <span>{{ layer.visible ? 'shown' : 'hidden' }}</span>
+          </button>
+          <button type="button" class="layer-list__visibility" (click)="mapEditor.setLayerVisibility(layer.id, !layer.visible)">
+            Toggle {{ layer.name }}
+          </button>
+        }
+      </div>
+    </section>
+  } @else {
+    <section id="development-panel" class="development" role="tabpanel" aria-labelledby="development-tab">
+      <p class="development__intro">Completed development steps currently represented in the editor build.</p>
+      <ol class="development__steps">
+        @for (step of developmentSteps; track step.title) {
+          <li class="development__step">
+            <span class="development__status" aria-label="Completed">✓</span>
+            <div>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.description }}</p>
+              <ul>
+                @for (artifact of step.artifacts; track artifact) {
+                  <li>{{ artifact }}</li>
+                }
+              </ul>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  }
 </app-docking-panel>
