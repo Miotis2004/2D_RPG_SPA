@@ -53,7 +53,38 @@ export class MapRenderer {
       }
     }
 
+    visibleTiles += this.renderCollisionActors(gameMap, viewport);
+
     return visibleTiles;
+  }
+
+  private renderCollisionActors(gameMap: GameMap, viewport: Viewport): number {
+    const graphics = this.getLayerGraphics('collision');
+    let visibleActors = 0;
+    const drawArea = (area: { readonly column: number; readonly row: number; readonly width: number; readonly height: number }, color: number, alpha: number) => {
+      const x = area.column * gameMap.tileSize;
+      const y = area.row * gameMap.tileSize;
+      const width = area.width * gameMap.tileSize;
+      const height = area.height * gameMap.tileSize;
+      if (x + width < viewport.bounds.left || y + height < viewport.bounds.top || x > viewport.bounds.right || y > viewport.bounds.bottom) {
+        return;
+      }
+
+      visibleActors++;
+      graphics.rect(x + 2, y + 2, width - 4, height - 4).fill({ color, alpha });
+    };
+
+    for (const object of gameMap.collisionObjects) {
+      if (object.blocksMovement) drawArea(object, 0x7b2cbf, 0.45);
+    }
+    for (const npc of gameMap.npcs) {
+      if (npc.blocksMovement) drawArea(npc, 0xf76707, 0.45);
+    }
+    for (const region of gameMap.specialRegions) {
+      if (region.blocksMovement) drawArea(region, 0x0c8599, 0.34);
+    }
+
+    return visibleActors;
   }
 
   private getLayerGraphics(layerId: MapLayerKind): Graphics {

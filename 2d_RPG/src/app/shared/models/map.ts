@@ -1,3 +1,5 @@
+import { CollisionObject, CollisionRegion } from './collision';
+
 export type MapLayerKind = 'ground' | 'decoration' | 'collision' | 'roof' | 'above-player';
 
 export interface MapCell {
@@ -19,6 +21,9 @@ export interface GameMap {
   readonly height: number;
   readonly tileSize: number;
   readonly layers: readonly MapLayer[];
+  readonly collisionObjects: readonly CollisionObject[];
+  readonly npcs: readonly CollisionObject[];
+  readonly specialRegions: readonly CollisionRegion[];
 }
 
 export const MAP_LAYER_ORDER: readonly MapLayerKind[] = [

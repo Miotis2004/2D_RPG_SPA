@@ -21,6 +21,22 @@
       <dt>Active layer</dt>
       <dd>{{ mapEditor.activeLayer()?.name }}</dd>
     </div>
+    <div>
+      <dt>Collision tiles</dt>
+      <dd>{{ mapEditor.collisionSummary().collisionTiles }}</dd>
+    </div>
+    <div>
+      <dt>Blocking objects</dt>
+      <dd>{{ mapEditor.collisionSummary().blockingObjects }}</dd>
+    </div>
+    <div>
+      <dt>Blocking NPCs</dt>
+      <dd>{{ mapEditor.collisionSummary().blockingNpcs }}</dd>
+    </div>
+    <div>
+      <dt>Blocking regions</dt>
+      <dd>{{ mapEditor.collisionSummary().blockingRegions }}</dd>
+    </div>
   
     @if (tilesetService.selectedTile(); as tile) {
       <div>

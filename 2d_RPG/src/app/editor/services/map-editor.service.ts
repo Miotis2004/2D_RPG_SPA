@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { CollisionObject, CollisionRegion } from '../../shared/models/collision';
 import { GameMap, MAP_LAYER_LABELS, MAP_LAYER_ORDER, MapCell, MapLayerKind } from '../../shared/models/map';
 
 const DEFAULT_TILE_SIZE = 32;
@@ -13,6 +14,16 @@ export class MapEditorService {
   readonly map = computed(() => this.mapState());
   readonly activeLayerId = computed(() => this.activeLayerIdState());
   readonly activeLayer = computed(() => this.mapState().layers.find((layer) => layer.id === this.activeLayerIdState()));
+  readonly collisionSummary = computed(() => {
+    const map = this.mapState();
+    const collisionTiles = map.layers.reduce((total, layer) => total + layer.cells.filter((cell) => cell.collision).length, 0);
+    return {
+      collisionTiles,
+      blockingObjects: map.collisionObjects.filter((object) => object.blocksMovement).length,
+      blockingNpcs: map.npcs.filter((npc) => npc.blocksMovement).length,
+      blockingRegions: map.specialRegions.filter((region) => region.blocksMovement).length,
+    };
+  });
 
   createNewMap(width = DEFAULT_MAP_WIDTH, height = DEFAULT_MAP_HEIGHT): void {
     this.mapState.set(this.createMap(`map-${Date.now()}`, 'Untitled Map', width, height));
@@ -63,6 +74,31 @@ export class MapEditorService {
     this.updateCell(column, row, (cell) => ({ ...cell, collision: !cell.collision }));
   }
 
+  upsertCollisionObject(object: CollisionObject): void {
+    this.mapState.update((map) => ({
+      ...map,
+      collisionObjects: this.upsertById(map.collisionObjects, object),
+    }));
+  }
+
+  upsertNpcCollision(npc: CollisionObject): void {
+    this.mapState.update((map) => ({
+      ...map,
+      npcs: this.upsertById(map.npcs, npc),
+    }));
+  }
+
+  upsertSpecialRegion(region: CollisionRegion): void {
+    this.mapState.update((map) => ({
+      ...map,
+      specialRegions: this.upsertById(map.specialRegions, region),
+    }));
+  }
+
+  private upsertById<T extends { readonly id: string }>(items: readonly T[], item: T): readonly T[] {
+    return items.some((entry) => entry.id === item.id) ? items.map((entry) => (entry.id === item.id ? item : entry)) : [...items, item];
+  }
+
   private updateCell(column: number, row: number, update: (cell: MapCell) => MapCell): void {
     this.paintMatching((currentColumn, currentRow) => currentColumn === column && currentRow === row, update);
   }
@@ -97,14 +133,23 @@ export class MapEditorService {
   }
 
   private createMap(id: string, name: string, width: number, height: number): GameMap {
-    const emptyCells = Array.from({ length: width * height }, (): MapCell => ({ tileId: null, collision: false }));
+    const createEmptyCells = () => Array.from({ length: width * height }, (): MapCell => ({ tileId: null, collision: false }));
     return {
       id,
       name,
       width,
       height,
       tileSize: DEFAULT_TILE_SIZE,
-      layers: MAP_LAYER_ORDER.map((layerId) => ({ id: layerId, name: MAP_LAYER_LABELS[layerId], visible: true, cells: emptyCells })),
+      layers: MAP_LAYER_ORDER.map((layerId) => ({ id: layerId, name: MAP_LAYER_LABELS[layerId], visible: true, cells: createEmptyCells() })),
+      collisionObjects: [
+        { id: 'boulder-1', name: 'Boulder', column: 8, row: 7, width: 2, height: 2, blocksMovement: true },
+      ],
+      npcs: [
+        { id: 'npc-guard', name: 'Village Guard', column: 14, row: 10, width: 1, height: 1, blocksMovement: true },
+      ],
+      specialRegions: [
+        { id: 'deep-water', name: 'Deep Water', column: 20, row: 4, width: 5, height: 3, blocksMovement: true, tag: 'water' },
+      ],
     };
   }
 }
