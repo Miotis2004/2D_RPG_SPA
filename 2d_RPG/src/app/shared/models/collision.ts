@@ -1,4 +1,4 @@
-export type CollisionSource = 'bounds' | 'tile' | 'object' | 'npc' | 'region';
+export type CollisionSource = 'bounds' | 'tile' | 'object' | 'npc' | 'entity' | 'region';
 
 export interface GridPosition {
   readonly column: number;

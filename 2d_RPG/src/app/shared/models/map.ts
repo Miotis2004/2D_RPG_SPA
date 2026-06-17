@@ -1,4 +1,5 @@
 import { CollisionObject, CollisionRegion } from './collision';
+import { Entity } from './entity';
 
 export type MapLayerKind = 'ground' | 'decoration' | 'collision' | 'roof' | 'above-player';
 
@@ -23,6 +24,7 @@ export interface GameMap {
   readonly layers: readonly MapLayer[];
   readonly collisionObjects: readonly CollisionObject[];
   readonly npcs: readonly CollisionObject[];
+  readonly entities: readonly Entity[];
   readonly specialRegions: readonly CollisionRegion[];
 }
 

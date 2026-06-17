@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
-import { CollisionHit, CollisionObject, CollisionRegion, GridPosition, MovementValidationResult } from '../../shared/models/collision';
+import {
+  CollisionHit,
+  CollisionObject,
+  CollisionRegion,
+  GridPosition,
+  MovementValidationResult,
+} from '../../shared/models/collision';
 import { GameMap, MapCell } from '../../shared/models/map';
 import { Tileset } from '../../shared/models/tile';
+import { entityToCollisionArea } from '../../shared/models/entity';
 
 @Injectable({ providedIn: 'root' })
 export class CollisionSystem {
@@ -26,8 +33,16 @@ export class CollisionSystem {
       }
     }
 
+    const npcIds = new Set(gameMap.npcs.map((npc) => npc.id));
     hits.push(...this.findEntityHits('object', gameMap.collisionObjects, occupiedTiles));
     hits.push(...this.findEntityHits('npc', gameMap.npcs, occupiedTiles));
+    hits.push(
+      ...this.findEntityHits(
+        'entity',
+        gameMap.entities.filter((entity) => !npcIds.has(entity.id)).map(entityToCollisionArea),
+        occupiedTiles,
+      ),
+    );
     hits.push(...this.findRegionHits(gameMap.specialRegions, occupiedTiles));
 
     return {
@@ -50,14 +65,23 @@ export class CollisionSystem {
     return !this.canMove(gameMap, position, tilesets);
   }
 
-  private findTileCollision(gameMap: GameMap, position: GridPosition, tilesets: readonly Tileset[]): CollisionHit | undefined {
+  private findTileCollision(
+    gameMap: GameMap,
+    position: GridPosition,
+    tilesets: readonly Tileset[],
+  ): CollisionHit | undefined {
     for (const layer of gameMap.layers) {
-      const cell = layer.cells[position.row * gameMap.width + position.column] as MapCell | undefined;
+      const cell = layer.cells[position.row * gameMap.width + position.column] as
+        | MapCell
+        | undefined;
       if (!cell) {
         continue;
       }
 
-      if (cell.collision || (cell.tileId !== null && this.tileBlocksMovement(cell.tileId, tilesets))) {
+      if (
+        cell.collision ||
+        (cell.tileId !== null && this.tileBlocksMovement(cell.tileId, tilesets))
+      ) {
         return {
           source: 'tile',
           id: `${layer.id}:${position.column},${position.row}`,
@@ -71,11 +95,13 @@ export class CollisionSystem {
   }
 
   private tileBlocksMovement(tileId: number, tilesets: readonly Tileset[]): boolean {
-    return tilesets.some((tileset) => tileset.tiles.some((tile) => tile.id === tileId && tile.collision));
+    return tilesets.some((tileset) =>
+      tileset.tiles.some((tile) => tile.id === tileId && tile.collision),
+    );
   }
 
   private findEntityHits(
-    source: 'object' | 'npc',
+    source: 'object' | 'npc' | 'entity',
     entities: readonly CollisionObject[],
     positions: readonly GridPosition[],
   ): CollisionHit[] {
@@ -88,17 +114,28 @@ export class CollisionSystem {
       );
   }
 
-  private findRegionHits(regions: readonly CollisionRegion[], positions: readonly GridPosition[]): CollisionHit[] {
+  private findRegionHits(
+    regions: readonly CollisionRegion[],
+    positions: readonly GridPosition[],
+  ): CollisionHit[] {
     return regions
       .filter((region) => region.blocksMovement)
       .flatMap((region) =>
         positions
           .filter((position) => this.intersectsArea(position, region))
-          .map((position) => ({ source: 'region' as const, id: region.id, name: region.name, position })),
+          .map((position) => ({
+            source: 'region' as const,
+            id: region.id,
+            name: region.name,
+            position,
+          })),
       );
   }
 
-  private getOccupiedTiles(position: GridPosition, size: { readonly width: number; readonly height: number }): readonly GridPosition[] {
+  private getOccupiedTiles(
+    position: GridPosition,
+    size: { readonly width: number; readonly height: number },
+  ): readonly GridPosition[] {
     const width = Math.max(1, Math.ceil(size.width));
     const height = Math.max(1, Math.ceil(size.height));
     return Array.from({ length: width * height }, (_, index) => ({
@@ -108,10 +145,28 @@ export class CollisionSystem {
   }
 
   private isInsideMap(gameMap: GameMap, position: GridPosition): boolean {
-    return position.column >= 0 && position.row >= 0 && position.column < gameMap.width && position.row < gameMap.height;
+    return (
+      position.column >= 0 &&
+      position.row >= 0 &&
+      position.column < gameMap.width &&
+      position.row < gameMap.height
+    );
   }
 
-  private intersectsArea(position: GridPosition, area: { readonly column: number; readonly row: number; readonly width: number; readonly height: number }): boolean {
-    return position.column >= area.column && position.row >= area.row && position.column < area.column + area.width && position.row < area.row + area.height;
+  private intersectsArea(
+    position: GridPosition,
+    area: {
+      readonly column: number;
+      readonly row: number;
+      readonly width: number;
+      readonly height: number;
+    },
+  ): boolean {
+    return (
+      position.column >= area.column &&
+      position.row >= area.row &&
+      position.column < area.column + area.width &&
+      position.row < area.row + area.height
+    );
   }
 }

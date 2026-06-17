@@ -44,7 +44,9 @@
 
         <div>
           <dt>Map</dt>
-          <dd>{{ mapEditor.map().name }} ({{ mapEditor.map().width }}×{{ mapEditor.map().height }})</dd>
+          <dd>
+            {{ mapEditor.map().name }} ({{ mapEditor.map().width }}×{{ mapEditor.map().height }})
+          </dd>
         </div>
         <div>
           <dt>Active layer</dt>
@@ -61,6 +63,14 @@
         <div>
           <dt>Blocking NPCs</dt>
           <dd>{{ mapEditor.collisionSummary().blockingNpcs }}</dd>
+        </div>
+        <div>
+          <dt>Entities</dt>
+          <dd>{{ mapEditor.collisionSummary().totalEntities }}</dd>
+        </div>
+        <div>
+          <dt>Blocking entities</dt>
+          <dd>{{ mapEditor.collisionSummary().blockingEntities }}</dd>
         </div>
         <div>
           <dt>Blocking regions</dt>
@@ -94,15 +104,26 @@
             {{ layer.name }}
             <span>{{ layer.visible ? 'shown' : 'hidden' }}</span>
           </button>
-          <button type="button" class="layer-list__visibility" (click)="mapEditor.setLayerVisibility(layer.id, !layer.visible)">
+          <button
+            type="button"
+            class="layer-list__visibility"
+            (click)="mapEditor.setLayerVisibility(layer.id, !layer.visible)"
+          >
             Toggle {{ layer.name }}
           </button>
         }
       </div>
     </section>
   } @else {
-    <section id="development-panel" class="development" role="tabpanel" aria-labelledby="development-tab">
-      <p class="development__intro">Completed development steps currently represented in the editor build.</p>
+    <section
+      id="development-panel"
+      class="development"
+      role="tabpanel"
+      aria-labelledby="development-tab"
+    >
+      <p class="development__intro">
+        Completed development steps currently represented in the editor build.
+      </p>
       <ol class="development__steps">
         @for (step of developmentSteps; track step.title) {
           <li class="development__step">

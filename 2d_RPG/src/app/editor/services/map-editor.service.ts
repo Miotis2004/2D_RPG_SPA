@@ -1,6 +1,13 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { CollisionObject, CollisionRegion } from '../../shared/models/collision';
-import { GameMap, MAP_LAYER_LABELS, MAP_LAYER_ORDER, MapCell, MapLayerKind } from '../../shared/models/map';
+import { Entity } from '../../shared/models/entity';
+import {
+  GameMap,
+  MAP_LAYER_LABELS,
+  MAP_LAYER_ORDER,
+  MapCell,
+  MapLayerKind,
+} from '../../shared/models/map';
 
 const DEFAULT_TILE_SIZE = 32;
 const DEFAULT_MAP_WIDTH = 40;
@@ -8,19 +15,28 @@ const DEFAULT_MAP_HEIGHT = 25;
 
 @Injectable({ providedIn: 'root' })
 export class MapEditorService {
-  private readonly mapState = signal<GameMap>(this.createMap('map-grasslands', 'Grasslands Field', DEFAULT_MAP_WIDTH, DEFAULT_MAP_HEIGHT));
+  private readonly mapState = signal<GameMap>(
+    this.createMap('map-grasslands', 'Grasslands Field', DEFAULT_MAP_WIDTH, DEFAULT_MAP_HEIGHT),
+  );
   private readonly activeLayerIdState = signal<MapLayerKind>('ground');
 
   readonly map = computed(() => this.mapState());
   readonly activeLayerId = computed(() => this.activeLayerIdState());
-  readonly activeLayer = computed(() => this.mapState().layers.find((layer) => layer.id === this.activeLayerIdState()));
+  readonly activeLayer = computed(() =>
+    this.mapState().layers.find((layer) => layer.id === this.activeLayerIdState()),
+  );
   readonly collisionSummary = computed(() => {
     const map = this.mapState();
-    const collisionTiles = map.layers.reduce((total, layer) => total + layer.cells.filter((cell) => cell.collision).length, 0);
+    const collisionTiles = map.layers.reduce(
+      (total, layer) => total + layer.cells.filter((cell) => cell.collision).length,
+      0,
+    );
     return {
       collisionTiles,
       blockingObjects: map.collisionObjects.filter((object) => object.blocksMovement).length,
       blockingNpcs: map.npcs.filter((npc) => npc.blocksMovement).length,
+      blockingEntities: map.entities.filter((entity) => entity.blocksMovement).length,
+      totalEntities: map.entities.length,
       blockingRegions: map.specialRegions.filter((region) => region.blocksMovement).length,
     };
   });
@@ -56,18 +72,31 @@ export class MapEditorService {
     this.mapState.update((map) => ({
       ...map,
       layers: map.layers.map((layer) =>
-        layer.id === layerId ? { ...layer, cells: layer.cells.map((cell) => ({ ...cell, tileId })) } : layer,
+        layer.id === layerId
+          ? { ...layer, cells: layer.cells.map((cell) => ({ ...cell, tileId })) }
+          : layer,
       ),
     }));
   }
 
-  paintRectangle(start: { readonly column: number; readonly row: number }, end: { readonly column: number; readonly row: number }, tileId: number): void {
+  paintRectangle(
+    start: { readonly column: number; readonly row: number },
+    end: { readonly column: number; readonly row: number },
+    tileId: number,
+  ): void {
     this.paintArea(start, end, (cell) => ({ ...cell, tileId }));
   }
 
-  paintCircle(center: { readonly column: number; readonly row: number }, edge: { readonly column: number; readonly row: number }, tileId: number): void {
+  paintCircle(
+    center: { readonly column: number; readonly row: number },
+    edge: { readonly column: number; readonly row: number },
+    tileId: number,
+  ): void {
     const radius = Math.max(1, Math.hypot(edge.column - center.column, edge.row - center.row));
-    this.paintMatching((column, row) => Math.hypot(column - center.column, row - center.row) <= radius, (cell) => ({ ...cell, tileId }));
+    this.paintMatching(
+      (column, row) => Math.hypot(column - center.column, row - center.row) <= radius,
+      (cell) => ({ ...cell, tileId }),
+    );
   }
 
   toggleCollision(column: number, row: number): void {
@@ -88,6 +117,25 @@ export class MapEditorService {
     }));
   }
 
+  upsertEntity(entity: Entity): void {
+    this.mapState.update((map) => ({
+      ...map,
+      entities: this.upsertById(map.entities, entity),
+      npcs:
+        entity.type === 'npc'
+          ? this.upsertById(map.npcs, {
+              id: entity.id,
+              name: entity.name,
+              column: Math.round(entity.x),
+              row: Math.round(entity.y),
+              width: entity.width,
+              height: entity.height,
+              blocksMovement: entity.blocksMovement,
+            })
+          : map.npcs,
+    }));
+  }
+
   upsertSpecialRegion(region: CollisionRegion): void {
     this.mapState.update((map) => ({
       ...map,
@@ -95,23 +143,41 @@ export class MapEditorService {
     }));
   }
 
-  private upsertById<T extends { readonly id: string }>(items: readonly T[], item: T): readonly T[] {
-    return items.some((entry) => entry.id === item.id) ? items.map((entry) => (entry.id === item.id ? item : entry)) : [...items, item];
+  private upsertById<T extends { readonly id: string }>(
+    items: readonly T[],
+    item: T,
+  ): readonly T[] {
+    return items.some((entry) => entry.id === item.id)
+      ? items.map((entry) => (entry.id === item.id ? item : entry))
+      : [...items, item];
   }
 
   private updateCell(column: number, row: number, update: (cell: MapCell) => MapCell): void {
-    this.paintMatching((currentColumn, currentRow) => currentColumn === column && currentRow === row, update);
+    this.paintMatching(
+      (currentColumn, currentRow) => currentColumn === column && currentRow === row,
+      update,
+    );
   }
 
-  private paintArea(start: { readonly column: number; readonly row: number }, end: { readonly column: number; readonly row: number }, update: (cell: MapCell) => MapCell): void {
+  private paintArea(
+    start: { readonly column: number; readonly row: number },
+    end: { readonly column: number; readonly row: number },
+    update: (cell: MapCell) => MapCell,
+  ): void {
     const minColumn = Math.min(start.column, end.column);
     const maxColumn = Math.max(start.column, end.column);
     const minRow = Math.min(start.row, end.row);
     const maxRow = Math.max(start.row, end.row);
-    this.paintMatching((column, row) => column >= minColumn && column <= maxColumn && row >= minRow && row <= maxRow, update);
+    this.paintMatching(
+      (column, row) => column >= minColumn && column <= maxColumn && row >= minRow && row <= maxRow,
+      update,
+    );
   }
 
-  private paintMatching(matches: (column: number, row: number) => boolean, update: (cell: MapCell) => MapCell): void {
+  private paintMatching(
+    matches: (column: number, row: number) => boolean,
+    update: (cell: MapCell) => MapCell,
+  ): void {
     const layerId = this.activeLayerIdState();
     this.mapState.update((map) => ({
       ...map,
@@ -133,22 +199,110 @@ export class MapEditorService {
   }
 
   private createMap(id: string, name: string, width: number, height: number): GameMap {
-    const createEmptyCells = () => Array.from({ length: width * height }, (): MapCell => ({ tileId: null, collision: false }));
+    const createEmptyCells = () =>
+      Array.from({ length: width * height }, (): MapCell => ({ tileId: null, collision: false }));
     return {
       id,
       name,
       width,
       height,
       tileSize: DEFAULT_TILE_SIZE,
-      layers: MAP_LAYER_ORDER.map((layerId) => ({ id: layerId, name: MAP_LAYER_LABELS[layerId], visible: true, cells: createEmptyCells() })),
+      layers: MAP_LAYER_ORDER.map((layerId) => ({
+        id: layerId,
+        name: MAP_LAYER_LABELS[layerId],
+        visible: true,
+        cells: createEmptyCells(),
+      })),
       collisionObjects: [
-        { id: 'boulder-1', name: 'Boulder', column: 8, row: 7, width: 2, height: 2, blocksMovement: true },
+        {
+          id: 'boulder-1',
+          name: 'Boulder',
+          column: 8,
+          row: 7,
+          width: 2,
+          height: 2,
+          blocksMovement: true,
+        },
       ],
       npcs: [
-        { id: 'npc-guard', name: 'Village Guard', column: 14, row: 10, width: 1, height: 1, blocksMovement: true },
+        {
+          id: 'npc-guard',
+          name: 'Village Guard',
+          column: 14,
+          row: 10,
+          width: 1,
+          height: 1,
+          blocksMovement: true,
+        },
+      ],
+      entities: [
+        {
+          id: 'npc-guard',
+          name: 'Village Guard',
+          type: 'npc',
+          x: 14,
+          y: 10,
+          width: 1,
+          height: 1,
+          blocksMovement: true,
+          tags: ['town'],
+        },
+        {
+          id: 'monster-slime',
+          name: 'Green Slime',
+          type: 'monster',
+          x: 18,
+          y: 12,
+          width: 1,
+          height: 1,
+          blocksMovement: true,
+          tags: ['grasslands'],
+        },
+        {
+          id: 'item-potion',
+          name: 'Potion',
+          type: 'item',
+          x: 11,
+          y: 6,
+          width: 1,
+          height: 1,
+          blocksMovement: false,
+          tags: ['pickup'],
+        },
+        {
+          id: 'trigger-bridge',
+          name: 'Bridge Event',
+          type: 'trigger',
+          x: 22,
+          y: 9,
+          width: 2,
+          height: 1,
+          blocksMovement: false,
+          tags: ['event'],
+        },
+        {
+          id: 'vehicle-raft',
+          name: 'Raft',
+          type: 'vehicle',
+          x: 24,
+          y: 5,
+          width: 2,
+          height: 1,
+          blocksMovement: true,
+          tags: ['water'],
+        },
       ],
       specialRegions: [
-        { id: 'deep-water', name: 'Deep Water', column: 20, row: 4, width: 5, height: 3, blocksMovement: true, tag: 'water' },
+        {
+          id: 'deep-water',
+          name: 'Deep Water',
+          column: 20,
+          row: 4,
+          width: 5,
+          height: 3,
+          blocksMovement: true,
+          tag: 'water',
+        },
       ],
     };
   }

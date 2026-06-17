@@ -17,9 +17,25 @@ function createMap(cell: MapCell = { tileId: null, collision: false }): GameMap 
         cells: Array.from({ length: 9 }, () => ({ ...cell })),
       },
     ],
-    collisionObjects: [{ id: 'crate', name: 'Crate', column: 1, row: 0, width: 1, height: 1, blocksMovement: true }],
-    npcs: [{ id: 'npc', name: 'NPC', column: 0, row: 1, width: 1, height: 1, blocksMovement: true }],
-    specialRegions: [{ id: 'lava', name: 'Lava', column: 2, row: 2, width: 1, height: 1, blocksMovement: true, tag: 'hazard' }],
+    collisionObjects: [
+      { id: 'crate', name: 'Crate', column: 1, row: 0, width: 1, height: 1, blocksMovement: true },
+    ],
+    npcs: [
+      { id: 'npc', name: 'NPC', column: 0, row: 1, width: 1, height: 1, blocksMovement: true },
+    ],
+    entities: [],
+    specialRegions: [
+      {
+        id: 'lava',
+        name: 'Lava',
+        column: 2,
+        row: 2,
+        width: 1,
+        height: 1,
+        blocksMovement: true,
+        tag: 'hazard',
+      },
+    ],
   };
 }
 
@@ -52,17 +68,61 @@ describe('CollisionSystem', () => {
     const map = createMap();
     const paintedCollisionMap = {
       ...map,
-      layers: [{ ...map.layers[0], cells: map.layers[0].cells.map((cell, index) => (index === 0 ? { ...cell, collision: true } : cell)) }],
+      layers: [
+        {
+          ...map.layers[0],
+          cells: map.layers[0].cells.map((cell, index) =>
+            index === 0 ? { ...cell, collision: true } : cell,
+          ),
+        },
+      ],
     };
     const tilesetCollisionMap = {
       ...map,
-      layers: [{ ...map.layers[0], cells: map.layers[0].cells.map((cell, index) => (index === 5 ? { ...cell, tileId: 0 } : cell)) }],
+      layers: [
+        {
+          ...map.layers[0],
+          cells: map.layers[0].cells.map((cell, index) =>
+            index === 5 ? { ...cell, tileId: 0 } : cell,
+          ),
+        },
+      ],
     };
 
-    expect(collisionSystem.validateMovement(paintedCollisionMap, { column: 0, row: 0 }).hits[0].source).toBe('tile');
-    expect(collisionSystem.validateMovement(map, { column: 1, row: 0 }).hits[0].source).toBe('object');
+    expect(
+      collisionSystem.validateMovement(paintedCollisionMap, { column: 0, row: 0 }).hits[0].source,
+    ).toBe('tile');
+    expect(collisionSystem.validateMovement(map, { column: 1, row: 0 }).hits[0].source).toBe(
+      'object',
+    );
     expect(collisionSystem.validateMovement(map, { column: 0, row: 1 }).hits[0].source).toBe('npc');
-    expect(collisionSystem.validateMovement(map, { column: 2, row: 2 }).hits[0].source).toBe('region');
-    expect(collisionSystem.validateMovement(tilesetCollisionMap, { column: 2, row: 1 }, [blockingTileset]).hits[0].source).toBe('tile');
+    const entityMap = {
+      ...map,
+      entities: [
+        {
+          id: 'monster',
+          name: 'Monster',
+          type: 'monster' as const,
+          x: 2,
+          y: 0,
+          width: 1,
+          height: 1,
+          blocksMovement: true,
+          tags: [],
+        },
+      ],
+    };
+
+    expect(collisionSystem.validateMovement(map, { column: 2, row: 2 }).hits[0].source).toBe(
+      'region',
+    );
+    expect(collisionSystem.validateMovement(entityMap, { column: 2, row: 0 }).hits[0].source).toBe(
+      'entity',
+    );
+    expect(
+      collisionSystem.validateMovement(tilesetCollisionMap, { column: 2, row: 1 }, [
+        blockingTileset,
+      ]).hits[0].source,
+    ).toBe('tile');
   });
 });
