@@ -5,7 +5,7 @@
         type="button"
         class="asset-list__item"
         [class.asset-list__item--active]="editorState.selectedAssetId() === asset.id"
-        (click)="editorState.selectAsset(asset.id)"
+        (click)="editorState.selectAsset(asset.id); asset.type === 'Tileset' && tilesetService.selectTileset(asset.id)"
       >
         <span>{{ asset.name }}</span>
         <small>{{ asset.type }}</small>
