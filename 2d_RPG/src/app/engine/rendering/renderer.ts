@@ -1,4 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js';
+import { PlayerState } from '../../shared/models/player';
 import { GameMap } from '../../shared/models/map';
 import { Camera } from './camera';
 import { Layer } from './layer';
@@ -19,6 +20,7 @@ export class Renderer {
   private readonly mapRenderer = new MapRenderer();
   private readonly world = new Container();
   private readonly debugOverlay = new Graphics();
+  private readonly playerLayer = new Graphics();
   private app?: Application;
   private snapshot: RendererSnapshot = { cameraX: 0, cameraY: 0, zoom: 1, visibleTiles: 0 };
 
@@ -26,9 +28,8 @@ export class Renderer {
     this.app = new Application();
     await this.app.init({ antialias: false, background: '#101626', resizeTo: host });
     host.appendChild(this.app.canvas);
-    this.world.addChild(...this.layers.map((layer) => layer.container), this.mapRenderer.container, this.debugOverlay);
+    this.world.addChild(...this.layers.map((layer) => layer.container), this.mapRenderer.container, this.playerLayer, this.debugOverlay);
     this.app.stage.addChild(this.world);
-    this.app.ticker.add(() => this.render());
     this.resize();
   }
 
@@ -69,15 +70,16 @@ export class Renderer {
     return this.snapshot;
   }
 
-  renderMap(gameMap: GameMap): RendererSnapshot {
-    return this.render(gameMap);
+  renderMap(gameMap: GameMap, player?: PlayerState): RendererSnapshot {
+    return this.render(gameMap, player);
   }
 
-  private render(gameMap?: GameMap): RendererSnapshot {
+  private render(gameMap?: GameMap, player?: PlayerState): RendererSnapshot {
     this.layers.forEach((layer) => layer.render(this.viewport));
-    this.renderDebugOverlay();
     const bounds = this.viewport.bounds;
     const visibleTiles = gameMap ? this.mapRenderer.render(gameMap, this.viewport) : Math.ceil(bounds.width / 32) * Math.ceil(bounds.height / 32);
+    this.renderPlayer(gameMap, player);
+    this.renderDebugOverlay();
     this.snapshot = {
       cameraX: Math.round(this.camera.state.x),
       cameraY: Math.round(this.camera.state.y),
@@ -85,6 +87,28 @@ export class Renderer {
       visibleTiles,
     };
     return this.snapshot;
+  }
+
+  private renderPlayer(gameMap?: GameMap, player?: PlayerState): void {
+    this.playerLayer.clear();
+    if (!gameMap || !player) {
+      return;
+    }
+
+    const tileSize = gameMap.tileSize * this.camera.state.zoom;
+    const screenX = (player.x * gameMap.tileSize - this.camera.state.x) * this.camera.state.zoom;
+    const screenY = (player.y * gameMap.tileSize - this.camera.state.y) * this.camera.state.zoom;
+    const bob = player.moving ? Math.sin(player.animationFrame * Math.PI) * 2 * this.camera.state.zoom : 0;
+    const bodyColor = player.running ? 0xffb347 : 0x4f8cff;
+    const facingOffset = { up: [0, -4], down: [0, 4], left: [-4, 0], right: [4, 0] }[player.direction];
+
+    this.playerLayer
+      .rect(screenX + tileSize * 0.18, screenY + tileSize * 0.15 + bob, tileSize * 0.64, tileSize * 0.78)
+      .fill({ color: bodyColor })
+      .stroke({ color: 0xffffff, alpha: 0.85, width: Math.max(1, this.camera.state.zoom) });
+    this.playerLayer
+      .circle(screenX + tileSize / 2 + facingOffset[0] * this.camera.state.zoom, screenY + tileSize * 0.35 + bob + facingOffset[1] * this.camera.state.zoom, tileSize * 0.11)
+      .fill({ color: 0x101626 });
   }
 
   private renderDebugOverlay(): void {
