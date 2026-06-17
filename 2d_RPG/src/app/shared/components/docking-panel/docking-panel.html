@@ -1,0 +1,13 @@
+<section class="docking-panel">
+  <header class="docking-panel__header">
+    <div>
+      <h2>{{ title() }}</h2>
+      @if (subtitle()) {
+        <p>{{ subtitle() }}</p>
+      }
+    </div>
+  </header>
+  <div class="docking-panel__content">
+    <ng-content />
+  </div>
+</section>

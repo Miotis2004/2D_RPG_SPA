@@ -1,0 +1,43 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  background: var(--panel-bg);
+
+  strong {
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  &__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: rgb(255 255 255 / 5%);
+    cursor: pointer;
+  }
+
+  &__button--active {
+    border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  kbd {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+}
