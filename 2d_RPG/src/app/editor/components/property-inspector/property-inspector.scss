@@ -50,3 +50,111 @@
   color: var(--text-muted);
   font-size: 0.75rem;
 }
+
+.inspector-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 4%);
+}
+
+.inspector-tabs__tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text-primary);
+    background: rgb(255 255 255 / 7%);
+  }
+}
+
+.inspector-tabs__tab--active {
+  color: #061b20;
+  background: var(--accent);
+  box-shadow: 0 0 18px rgb(78 205 196 / 28%);
+}
+
+.development {
+  display: grid;
+  gap: 1rem;
+}
+
+.development__intro {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.development__steps {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.development__step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 4%);
+
+  h3 {
+    margin: 0 0 0.35rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.65rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    border: 1px solid rgb(78 205 196 / 30%);
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    color: var(--text-primary);
+    background: rgb(78 205 196 / 10%);
+    font-size: 0.72rem;
+  }
+}
+
+.development__status {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: #061b20;
+  background: var(--accent);
+  font-weight: 900;
+}
