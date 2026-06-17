@@ -6,17 +6,21 @@
     <span>{{ rendererSnapshot().visibleTiles }} map tiles visible</span>
     <span>{{ mapEditor.map().width }}×{{ mapEditor.map().height }} {{ mapEditor.activeLayer()?.name }}</span>
     <span>{{ movementPreview() }}</span>
+    <span>{{ playerSystem.status() }}</span>
     <button type="button" (click)="focusMap()">Focus</button>
   </div>
   <div
     #viewportHost
     class="render-viewport__host"
     role="application"
-    aria-label="Infinite map viewport. Drag to pan and use the mouse wheel to zoom."
+    aria-label="Infinite map viewport. Drag to pan, use the mouse wheel to zoom, and use WASD or arrow keys to move the player. Hold Shift to run."
+    tabindex="0"
     (pointerdown)="startPan($event)"
     (pointermove)="pan($event)"
     (pointerup)="stopPan($event)"
     (pointercancel)="stopPan($event)"
     (wheel)="zoom($event)"
+    (keydown)="handleKeyDown($event)"
+    (keyup)="handleKeyUp($event)"
   ></div>
 </section>

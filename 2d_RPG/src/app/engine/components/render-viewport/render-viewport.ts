@@ -14,6 +14,7 @@ import { Renderer, RendererSnapshot } from '../../rendering/renderer';
 import { MapEditorService } from '../../../editor/services/map-editor.service';
 import { TilesetService } from '../../../editor/services/tileset.service';
 import { CollisionSystem } from '../../collision/collision-system';
+import { PlayerSystem } from '../../player/player-system';
 
 @Component({
   selector: 'app-render-viewport',
@@ -29,6 +30,7 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   protected readonly mapEditor = inject(MapEditorService);
   private readonly tilesetService = inject(TilesetService);
   private readonly collisionSystem = inject(CollisionSystem);
+  protected readonly playerSystem = inject(PlayerSystem);
   protected readonly movementPreview = signal('Movement validator ready');
   protected readonly rendererSnapshot = signal<RendererSnapshot>({
     cameraX: 0,
@@ -41,11 +43,13 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   private pointerId?: number;
   private lastPointer?: { readonly x: number; readonly y: number };
   private dragStartTile?: { readonly column: number; readonly row: number };
+  private animationFrameId?: number;
+  private lastFrameTime = 0;
 
   constructor() {
     effect(() => {
       const gameMap = this.mapEditor.map();
-      this.rendererSnapshot.set(this.renderer.renderMap(gameMap));
+      this.rendererSnapshot.set(this.renderer.renderMap(gameMap, this.playerSystem.player()));
     });
   }
 
@@ -54,10 +58,15 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
     await this.renderer.initialize(host);
     this.resizeObserver.observe(host);
     this.syncSnapshot();
+    this.startPlayerLoop();
+    host.focus();
   }
 
   ngOnDestroy(): void {
     this.resizeObserver.disconnect();
+    if (this.animationFrameId !== undefined) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
     this.renderer.destroy();
   }
 
@@ -119,6 +128,18 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
     this.rendererSnapshot.set(this.renderer.focus(0, 0));
   }
 
+  protected handleKeyDown(event: KeyboardEvent): void {
+    if (this.playerSystem.handleKeyDown(event)) {
+      event.preventDefault();
+    }
+  }
+
+  protected handleKeyUp(event: KeyboardEvent): void {
+    if (this.playerSystem.handleKeyUp(event)) {
+      event.preventDefault();
+    }
+  }
+
   private applyTool(tile: { readonly column: number; readonly row: number }): void {
     const selectedTile = this.tilesetService.selectedTile();
     switch (this.editorState.activeTool()) {
@@ -157,6 +178,17 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   }
 
   private syncSnapshot(): void {
-    this.rendererSnapshot.set(this.renderer.renderMap(this.mapEditor.map()));
+    this.rendererSnapshot.set(this.renderer.renderMap(this.mapEditor.map(), this.playerSystem.player()));
+  }
+
+  private startPlayerLoop(): void {
+    const step = (time: number) => {
+      const deltaMs = this.lastFrameTime ? time - this.lastFrameTime : 16;
+      this.lastFrameTime = time;
+      this.playerSystem.update(Math.min(deltaMs, 100), this.mapEditor.map(), this.tilesetService.tilesets());
+      this.syncSnapshot();
+      this.animationFrameId = requestAnimationFrame(step);
+    };
+    this.animationFrameId = requestAnimationFrame(step);
   }
 }
