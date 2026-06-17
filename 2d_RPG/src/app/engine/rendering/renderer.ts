@@ -1,7 +1,9 @@
 import { Application, Container, Graphics } from 'pixi.js';
+import { GameMap } from '../../shared/models/map';
 import { Camera } from './camera';
 import { Layer } from './layer';
 import { Viewport } from './viewport';
+import { MapRenderer } from './map-renderer';
 
 export interface RendererSnapshot {
   readonly cameraX: number;
@@ -13,7 +15,8 @@ export interface RendererSnapshot {
 export class Renderer {
   readonly camera = new Camera();
   readonly viewport = new Viewport(this.camera);
-  private readonly layers: Layer[] = [new Layer({ name: 'Ground', tileSize: 32 })];
+  private readonly layers: Layer[] = [new Layer({ name: 'Background', tileSize: 32 })];
+  private readonly mapRenderer = new MapRenderer();
   private readonly world = new Container();
   private readonly debugOverlay = new Graphics();
   private app?: Application;
@@ -23,7 +26,7 @@ export class Renderer {
     this.app = new Application();
     await this.app.init({ antialias: false, background: '#101626', resizeTo: host });
     host.appendChild(this.app.canvas);
-    this.world.addChild(...this.layers.map((layer) => layer.container), this.debugOverlay);
+    this.world.addChild(...this.layers.map((layer) => layer.container), this.mapRenderer.container, this.debugOverlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.render());
     this.resize();
@@ -50,15 +53,31 @@ export class Renderer {
     return this.render();
   }
 
+  focus(x = 0, y = 0): RendererSnapshot {
+    this.camera.focus(x, y);
+    return this.render();
+  }
+
+  screenToTile(point: { readonly x: number; readonly y: number }, tileSize: number): { readonly column: number; readonly row: number } {
+    return {
+      column: Math.floor((this.camera.state.x + point.x / this.camera.state.zoom) / tileSize),
+      row: Math.floor((this.camera.state.y + point.y / this.camera.state.zoom) / tileSize),
+    };
+  }
+
   currentSnapshot(): RendererSnapshot {
     return this.snapshot;
   }
 
-  private render(): RendererSnapshot {
+  renderMap(gameMap: GameMap): RendererSnapshot {
+    return this.render(gameMap);
+  }
+
+  private render(gameMap?: GameMap): RendererSnapshot {
     this.layers.forEach((layer) => layer.render(this.viewport));
     this.renderDebugOverlay();
     const bounds = this.viewport.bounds;
-    const visibleTiles = Math.ceil(bounds.width / 32) * Math.ceil(bounds.height / 32);
+    const visibleTiles = gameMap ? this.mapRenderer.render(gameMap, this.viewport) : Math.ceil(bounds.width / 32) * Math.ceil(bounds.height / 32);
     this.snapshot = {
       cameraX: Math.round(this.camera.state.x),
       cameraY: Math.round(this.camera.state.y),

@@ -6,10 +6,13 @@ import {
   OnDestroy,
   ViewChild,
   inject,
+  effect,
   signal,
 } from '@angular/core';
 import { EditorStateService } from '../../../core/state/editor-state.service';
 import { Renderer, RendererSnapshot } from '../../rendering/renderer';
+import { MapEditorService } from '../../../editor/services/map-editor.service';
+import { TilesetService } from '../../../editor/services/tileset.service';
 
 @Component({
   selector: 'app-render-viewport',
@@ -22,6 +25,8 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   private readonly viewportHost!: ElementRef<HTMLElement>;
 
   protected readonly editorState = inject(EditorStateService);
+  protected readonly mapEditor = inject(MapEditorService);
+  private readonly tilesetService = inject(TilesetService);
   protected readonly rendererSnapshot = signal<RendererSnapshot>({
     cameraX: 0,
     cameraY: 0,
@@ -32,6 +37,14 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   private readonly resizeObserver = new ResizeObserver(() => this.renderer.resize());
   private pointerId?: number;
   private lastPointer?: { readonly x: number; readonly y: number };
+  private dragStartTile?: { readonly column: number; readonly row: number };
+
+  constructor() {
+    effect(() => {
+      const gameMap = this.mapEditor.map();
+      this.rendererSnapshot.set(this.renderer.renderMap(gameMap));
+    });
+  }
 
   async ngAfterViewInit(): Promise<void> {
     const host = this.viewportHost.nativeElement;
@@ -48,7 +61,14 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   protected startPan(event: PointerEvent): void {
     this.pointerId = event.pointerId;
     this.lastPointer = { x: event.clientX, y: event.clientY };
+    this.dragStartTile = this.tileFromEvent(event);
     this.viewportHost.nativeElement.setPointerCapture(event.pointerId);
+
+    if (this.editorState.activeTool() === 'select' || event.button === 1) {
+      return;
+    }
+
+    this.applyTool(this.dragStartTile);
   }
 
   protected pan(event: PointerEvent): void {
@@ -56,16 +76,28 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const deltaX = this.lastPointer.x - event.clientX;
-    const deltaY = this.lastPointer.y - event.clientY;
+    if (this.editorState.activeTool() === 'select' || event.buttons === 4) {
+      const deltaX = this.lastPointer.x - event.clientX;
+      const deltaY = this.lastPointer.y - event.clientY;
+      this.lastPointer = { x: event.clientX, y: event.clientY };
+      this.rendererSnapshot.set(this.renderer.pan(deltaX, deltaY));
+      return;
+    }
+
     this.lastPointer = { x: event.clientX, y: event.clientY };
-    this.rendererSnapshot.set(this.renderer.pan(deltaX, deltaY));
+    if (this.editorState.activeTool() === 'paint' || this.editorState.activeTool() === 'erase' || this.editorState.activeTool() === 'collision') {
+      this.applyTool(this.tileFromEvent(event));
+    }
   }
 
   protected stopPan(event: PointerEvent): void {
     if (this.pointerId === event.pointerId) {
+      if (this.dragStartTile) {
+        this.finishDragTool(this.tileFromEvent(event));
+      }
       this.pointerId = undefined;
       this.lastPointer = undefined;
+      this.dragStartTile = undefined;
     }
   }
 
@@ -80,7 +112,45 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
     this.editorState.setZoom(Math.round(snapshot.zoom * 100) / 100);
   }
 
+  protected focusMap(): void {
+    this.rendererSnapshot.set(this.renderer.focus(0, 0));
+  }
+
+  private applyTool(tile: { readonly column: number; readonly row: number }): void {
+    const selectedTile = this.tilesetService.selectedTile();
+    switch (this.editorState.activeTool()) {
+      case 'paint':
+        if (selectedTile) this.mapEditor.paintTile(tile.column, tile.row, selectedTile.id);
+        break;
+      case 'erase':
+        this.mapEditor.eraseTile(tile.column, tile.row);
+        break;
+      case 'collision':
+        this.mapEditor.toggleCollision(tile.column, tile.row);
+        break;
+      case 'fill':
+        if (selectedTile) this.mapEditor.fill(selectedTile.id);
+        break;
+    }
+  }
+
+  private finishDragTool(tile: { readonly column: number; readonly row: number }): void {
+    const selectedTile = this.tilesetService.selectedTile();
+    if (!selectedTile || !this.dragStartTile) return;
+    if (this.editorState.activeTool() === 'rectangle') {
+      this.mapEditor.paintRectangle(this.dragStartTile, tile, selectedTile.id);
+    }
+    if (this.editorState.activeTool() === 'circle') {
+      this.mapEditor.paintCircle(this.dragStartTile, tile, selectedTile.id);
+    }
+  }
+
+  private tileFromEvent(event: PointerEvent): { readonly column: number; readonly row: number } {
+    const bounds = this.viewportHost.nativeElement.getBoundingClientRect();
+    return this.renderer.screenToTile({ x: event.clientX - bounds.left, y: event.clientY - bounds.top }, this.mapEditor.map().tileSize);
+  }
+
   private syncSnapshot(): void {
-    this.rendererSnapshot.set(this.renderer.currentSnapshot());
+    this.rendererSnapshot.set(this.renderer.renderMap(this.mapEditor.map()));
   }
 }

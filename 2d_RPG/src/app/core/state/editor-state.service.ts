@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 
-export type EditorTool = 'select' | 'paint' | 'erase' | 'events' | 'collision' | 'terrain';
+export type EditorTool = 'select' | 'paint' | 'fill' | 'rectangle' | 'circle' | 'erase' | 'events' | 'collision' | 'terrain';
 
 export interface EditorPanelState {
   readonly activeTool: EditorTool;

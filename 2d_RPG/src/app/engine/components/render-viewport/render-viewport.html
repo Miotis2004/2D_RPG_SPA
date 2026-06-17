@@ -3,7 +3,9 @@
     <span>PixiJS renderer</span>
     <span>Zoom {{ rendererSnapshot().zoom * 100 | number: '1.0-0' }}%</span>
     <span>Camera {{ rendererSnapshot().cameraX }}, {{ rendererSnapshot().cameraY }}</span>
-    <span>{{ rendererSnapshot().visibleTiles }} tiles culled</span>
+    <span>{{ rendererSnapshot().visibleTiles }} map tiles visible</span>
+    <span>{{ mapEditor.map().width }}×{{ mapEditor.map().height }} {{ mapEditor.activeLayer()?.name }}</span>
+    <button type="button" (click)="focusMap()">Focus</button>
   </div>
   <div
     #viewportHost

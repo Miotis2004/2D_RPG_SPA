@@ -17,6 +17,9 @@ export class Toolbar {
   protected readonly tools: readonly ToolButton[] = [
     { id: 'select', label: 'Select', shortcut: 'V' },
     { id: 'paint', label: 'Paint', shortcut: 'B' },
+    { id: 'fill', label: 'Fill', shortcut: 'F' },
+    { id: 'rectangle', label: 'Rectangle', shortcut: 'R' },
+    { id: 'circle', label: 'Circle', shortcut: 'O' },
     { id: 'erase', label: 'Erase', shortcut: 'E' },
     { id: 'events', label: 'Events', shortcut: 'G' },
     { id: 'collision', label: 'Collision', shortcut: 'C' },
