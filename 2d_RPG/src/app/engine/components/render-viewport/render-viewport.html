@@ -1,7 +1,19 @@
 <section class="render-viewport" aria-label="Rendering viewport">
   <div class="render-viewport__hud">
-    <span>PixiJS viewport shell</span>
-    <span>Zoom {{ editorState.zoom() * 100 }}%</span>
+    <span>PixiJS renderer</span>
+    <span>Zoom {{ rendererSnapshot().zoom * 100 | number: '1.0-0' }}%</span>
+    <span>Camera {{ rendererSnapshot().cameraX }}, {{ rendererSnapshot().cameraY }}</span>
+    <span>{{ rendererSnapshot().visibleTiles }} tiles culled</span>
   </div>
-  <canvas #viewportCanvas></canvas>
+  <div
+    #viewportHost
+    class="render-viewport__host"
+    role="application"
+    aria-label="Infinite map viewport. Drag to pan and use the mouse wheel to zoom."
+    (pointerdown)="startPan($event)"
+    (pointermove)="pan($event)"
+    (pointerup)="stopPan($event)"
+    (pointercancel)="stopPan($event)"
+    (wheel)="zoom($event)"
+  ></div>
 </section>
