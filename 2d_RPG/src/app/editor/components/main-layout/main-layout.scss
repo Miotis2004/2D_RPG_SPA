@@ -12,6 +12,12 @@
     min-height: 0;
   }
 
+  &__left {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
   &__left,
   &__center,
   &__right {

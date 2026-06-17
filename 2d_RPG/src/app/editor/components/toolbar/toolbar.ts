@@ -19,5 +19,7 @@ export class Toolbar {
     { id: 'paint', label: 'Paint', shortcut: 'B' },
     { id: 'erase', label: 'Erase', shortcut: 'E' },
     { id: 'events', label: 'Events', shortcut: 'G' },
+    { id: 'collision', label: 'Collision', shortcut: 'C' },
+    { id: 'terrain', label: 'Terrain', shortcut: 'T' },
   ];
 }

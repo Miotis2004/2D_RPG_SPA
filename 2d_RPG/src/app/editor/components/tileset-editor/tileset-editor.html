@@ -1,0 +1,58 @@
+<app-docking-panel title="Tileset System" subtitle="PNG import, tile selector, collision, and terrain metadata">
+  <div class="tileset-editor">
+    <label class="tileset-editor__import">
+      <span>Import PNG tileset</span>
+      <input type="file" accept="image/png" (change)="importTileset($event)" />
+    </label>
+    @if (importError()) {
+      <p class="tileset-editor__error">{{ importError() }}</p>
+    }
+
+    @if (selectedTileset(); as tileset) {
+      <section class="tileset-editor__summary" aria-label="Tileset metadata">
+        <strong>{{ tileset.name }}</strong>
+        <span>{{ tileset.columns }} × {{ tileset.rows }} tiles</span>
+        <span>{{ tileset.tileSize }}px grid</span>
+      </section>
+
+      <div class="tileset-editor__grid" [style.grid-template-columns]="gridStyle().gridTemplateColumns">
+        @for (tile of tileset.tiles; track tile.id) {
+          <button
+            type="button"
+            class="tileset-editor__tile"
+            [class.tileset-editor__tile--active]="selectedTile()?.id === tile.id"
+            [class.tileset-editor__tile--blocked]="tile.collision"
+            (click)="tilesetService.selectTile(tile.id)"
+          >
+            <span>{{ tile.id + 1 }}</span>
+            <small>{{ tile.terrain }}</small>
+          </button>
+        }
+      </div>
+    }
+
+    @if (selectedTile(); as tile) {
+      <section class="tileset-editor__tools" aria-label="Tile metadata painters">
+        <div>
+          <strong>{{ tile.name }}</strong>
+          <small>Source {{ tile.sourceX }}, {{ tile.sourceY }}</small>
+        </div>
+        <button type="button" class="tileset-editor__action" (click)="tilesetService.toggleSelectedTileCollision()">
+          {{ tile.collision ? 'Clear collision' : 'Paint collision' }}
+        </button>
+        <div class="tileset-editor__terrain">
+          @for (terrain of terrainTypes; track terrain) {
+            <button
+              type="button"
+              class="tileset-editor__terrain-button"
+              [class.tileset-editor__terrain-button--active]="tile.terrain === terrain"
+              (click)="tilesetService.paintSelectedTileTerrain(terrain)"
+            >
+              {{ terrain }}
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</app-docking-panel>

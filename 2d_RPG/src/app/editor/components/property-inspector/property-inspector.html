@@ -12,5 +12,20 @@
       <dt>Viewport zoom</dt>
       <dd>{{ editorState.zoom() * 100 }}%</dd>
     </div>
+  
+    @if (tilesetService.selectedTile(); as tile) {
+      <div>
+        <dt>Selected tile</dt>
+        <dd>#{{ tile.id + 1 }}</dd>
+      </div>
+      <div>
+        <dt>Collision</dt>
+        <dd>{{ tile.collision ? 'Blocked' : 'Open' }}</dd>
+      </div>
+      <div>
+        <dt>Terrain</dt>
+        <dd>{{ tile.terrain }}</dd>
+      </div>
+    }
   </dl>
 </app-docking-panel>
