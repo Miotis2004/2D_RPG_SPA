@@ -5,6 +5,7 @@
     <span>Camera {{ rendererSnapshot().cameraX }}, {{ rendererSnapshot().cameraY }}</span>
     <span>{{ rendererSnapshot().visibleTiles }} map tiles visible</span>
     <span>{{ mapEditor.map().width }}×{{ mapEditor.map().height }} {{ mapEditor.activeLayer()?.name }}</span>
+    <span>{{ movementPreview() }}</span>
     <button type="button" (click)="focusMap()">Focus</button>
   </div>
   <div

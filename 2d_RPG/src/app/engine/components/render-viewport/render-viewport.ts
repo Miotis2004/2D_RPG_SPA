@@ -13,6 +13,7 @@ import { EditorStateService } from '../../../core/state/editor-state.service';
 import { Renderer, RendererSnapshot } from '../../rendering/renderer';
 import { MapEditorService } from '../../../editor/services/map-editor.service';
 import { TilesetService } from '../../../editor/services/tileset.service';
+import { CollisionSystem } from '../../collision/collision-system';
 
 @Component({
   selector: 'app-render-viewport',
@@ -27,6 +28,8 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
   protected readonly editorState = inject(EditorStateService);
   protected readonly mapEditor = inject(MapEditorService);
   private readonly tilesetService = inject(TilesetService);
+  private readonly collisionSystem = inject(CollisionSystem);
+  protected readonly movementPreview = signal('Movement validator ready');
   protected readonly rendererSnapshot = signal<RendererSnapshot>({
     cameraX: 0,
     cameraY: 0,
@@ -147,7 +150,10 @@ export class RenderViewport implements AfterViewInit, OnDestroy {
 
   private tileFromEvent(event: PointerEvent): { readonly column: number; readonly row: number } {
     const bounds = this.viewportHost.nativeElement.getBoundingClientRect();
-    return this.renderer.screenToTile({ x: event.clientX - bounds.left, y: event.clientY - bounds.top }, this.mapEditor.map().tileSize);
+    const tile = this.renderer.screenToTile({ x: event.clientX - bounds.left, y: event.clientY - bounds.top }, this.mapEditor.map().tileSize);
+    const validation = this.collisionSystem.validateMovement(this.mapEditor.map(), tile, this.tilesetService.tilesets());
+    this.movementPreview.set(validation.valid ? `Open: ${tile.column}, ${tile.row}` : `Blocked: ${validation.hits.map((hit) => hit.name).join(', ')}`);
+    return tile;
   }
 
   private syncSnapshot(): void {
