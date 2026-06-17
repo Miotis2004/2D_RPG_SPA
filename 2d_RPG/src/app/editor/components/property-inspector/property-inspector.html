@@ -76,6 +76,14 @@
           <dt>Blocking regions</dt>
           <dd>{{ mapEditor.collisionSummary().blockingRegions }}</dd>
         </div>
+        <div>
+          <dt>Map events</dt>
+          <dd>{{ mapEditor.map().events.length }}</dd>
+        </div>
+        <div>
+          <dt>Runtime messages</dt>
+          <dd>{{ eventSystem.messages().length }}</dd>
+        </div>
 
         @if (tilesetService.selectedTile(); as tile) {
           <div>

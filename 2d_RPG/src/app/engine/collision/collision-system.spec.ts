@@ -24,6 +24,7 @@ function createMap(cell: MapCell = { tileId: null, collision: false }): GameMap 
       { id: 'npc', name: 'NPC', column: 0, row: 1, width: 1, height: 1, blocksMovement: true },
     ],
     entities: [],
+    events: [],
     specialRegions: [
       {
         id: 'lava',

@@ -3,6 +3,7 @@ import { DockingPanel } from '../../../shared/components/docking-panel/docking-p
 import { EditorStateService } from '../../../core/state/editor-state.service';
 import { TilesetService } from '../../services/tileset.service';
 import { MapEditorService } from '../../services/map-editor.service';
+import { EventSystem } from '../../../engine/events/event-system';
 
 type InspectorTab = 'properties' | 'development';
 
@@ -22,6 +23,7 @@ export class PropertyInspector {
   protected readonly editorState = inject(EditorStateService);
   protected readonly tilesetService = inject(TilesetService);
   protected readonly mapEditor = inject(MapEditorService);
+  protected readonly eventSystem = inject(EventSystem);
   protected readonly activeTab = signal<InspectorTab>('properties');
 
   protected readonly developmentSteps: readonly DevelopmentStep[] = [
@@ -65,6 +67,12 @@ export class PropertyInspector {
       description:
         'Added typed runtime entities for NPCs, monsters, items, triggers, and vehicles with map metadata and tests.',
       artifacts: ['Entity model', 'Entity system', 'Map entity samples'],
+    },
+    {
+      title: 'Event system',
+      description:
+        'Added data-driven RPG event commands for dialogue, movement, teleports, audio cues, variables, switches, conditionals, waits, and scripts.',
+      artifacts: ['Event model', 'Event runtime system', 'Sample map events', 'Unit test coverage'],
     },
   ];
 }

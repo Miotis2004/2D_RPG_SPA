@@ -235,6 +235,33 @@ export class MapEditorService {
           blocksMovement: true,
         },
       ],
+      events: [
+        {
+          id: 'event-bridge',
+          name: 'Lower Bridge',
+          trigger: 'action',
+          commands: [
+            {
+              id: 'message-guard',
+              type: 'show-message',
+              speaker: 'Village Guard',
+              message: 'The bridge is safe now. I will open the route.',
+            },
+            { id: 'switch-bridge', type: 'set-switch', switchId: 'bridgeLowered', value: true },
+            { id: 'move-guard', type: 'move-npc', npcId: 'npc-guard', x: 15, y: 10 },
+            { id: 'sound-bridge', type: 'play-sound', soundId: 'bridge-lower' },
+          ],
+        },
+        {
+          id: 'event-raft',
+          name: 'Board Raft',
+          trigger: 'touch',
+          commands: [
+            { id: 'music-river', type: 'play-music', musicId: 'river-theme', loop: true },
+            { id: 'teleport-river', type: 'teleport', mapId: 'map-river', x: 4, y: 12 },
+          ],
+        },
+      ],
       entities: [
         {
           id: 'npc-guard',
