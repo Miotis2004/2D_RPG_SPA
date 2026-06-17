@@ -43,3 +43,12 @@
     }
   }
 }
+
+.render-viewport__hud button {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  color: var(--text-primary);
+  background: rgb(35 99 63 / 82%);
+  cursor: pointer;
+}

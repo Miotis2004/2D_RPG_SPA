@@ -21,6 +21,10 @@ export class Camera {
     };
   }
 
+  focus(x: number, y: number): void {
+    this.cameraState = { ...this.cameraState, x, y };
+  }
+
   setZoom(zoom: number, anchor?: { readonly x: number; readonly y: number }): void {
     const clampedZoom = Math.min(this.maxZoom, Math.max(this.minZoom, zoom));
     if (!anchor) {

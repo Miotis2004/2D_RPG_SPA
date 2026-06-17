@@ -12,6 +12,15 @@
       <dt>Viewport zoom</dt>
       <dd>{{ editorState.zoom() * 100 }}%</dd>
     </div>
+
+    <div>
+      <dt>Map</dt>
+      <dd>{{ mapEditor.map().name }} ({{ mapEditor.map().width }}×{{ mapEditor.map().height }})</dd>
+    </div>
+    <div>
+      <dt>Active layer</dt>
+      <dd>{{ mapEditor.activeLayer()?.name }}</dd>
+    </div>
   
     @if (tilesetService.selectedTile(); as tile) {
       <div>
@@ -28,4 +37,21 @@
       </div>
     }
   </dl>
+
+  <div class="layer-list" aria-label="Map layers">
+    @for (layer of mapEditor.map().layers; track layer.id) {
+      <button
+        type="button"
+        [class.layer-list__layer--active]="mapEditor.activeLayerId() === layer.id"
+        class="layer-list__layer"
+        (click)="mapEditor.setActiveLayer(layer.id)"
+      >
+        {{ layer.name }}
+        <span>{{ layer.visible ? 'shown' : 'hidden' }}</span>
+      </button>
+      <button type="button" class="layer-list__visibility" (click)="mapEditor.setLayerVisibility(layer.id, !layer.visible)">
+        Toggle {{ layer.name }}
+      </button>
+    }
+  </div>
 </app-docking-panel>
