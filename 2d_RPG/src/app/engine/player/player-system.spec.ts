@@ -25,6 +25,7 @@ function createMap(): GameMap {
     ],
     npcs: [],
     entities: [],
+    events: [],
     specialRegions: [],
   };
 }
