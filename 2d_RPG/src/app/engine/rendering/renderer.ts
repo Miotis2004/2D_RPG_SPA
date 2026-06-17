@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js';
-import { PlayerState } from '../../shared/models/player';
+import { getCharacterSpriteFrame, PlayerState } from '../../shared/models/player';
 import { GameMap } from '../../shared/models/map';
 import { Camera } from './camera';
 import { Layer } from './layer';
@@ -98,9 +98,12 @@ export class Renderer {
     const tileSize = gameMap.tileSize * this.camera.state.zoom;
     const screenX = (player.x * gameMap.tileSize - this.camera.state.x) * this.camera.state.zoom;
     const screenY = (player.y * gameMap.tileSize - this.camera.state.y) * this.camera.state.zoom;
-    const bob = player.moving ? Math.sin(player.animationFrame * Math.PI) * 2 * this.camera.state.zoom : 0;
-    const bodyColor = player.running ? 0xffb347 : 0x4f8cff;
+    const spriteFrame = getCharacterSpriteFrame(player);
+    const gait = player.animation === 'idle' ? 0 : player.animationFrame % 2 === 0 ? -1 : 1;
+    const bob = player.moving ? Math.abs(gait) * 2 * this.camera.state.zoom : 0;
+    const bodyColor = player.animation === 'attack' ? 0xff6b6b : player.running ? 0xffb347 : 0x4f8cff;
     const facingOffset = { up: [0, -4], down: [0, 4], left: [-4, 0], right: [4, 0] }[player.direction];
+    const armLength = player.animation === 'attack' ? tileSize * 0.32 : tileSize * 0.18;
 
     this.playerLayer
       .rect(screenX + tileSize * 0.18, screenY + tileSize * 0.15 + bob, tileSize * 0.64, tileSize * 0.78)
@@ -109,6 +112,11 @@ export class Renderer {
     this.playerLayer
       .circle(screenX + tileSize / 2 + facingOffset[0] * this.camera.state.zoom, screenY + tileSize * 0.35 + bob + facingOffset[1] * this.camera.state.zoom, tileSize * 0.11)
       .fill({ color: 0x101626 });
+    this.playerLayer
+      .moveTo(screenX + tileSize / 2, screenY + tileSize * 0.58 + bob)
+      .lineTo(screenX + tileSize / 2 + facingOffset[0] * armLength * 0.25, screenY + tileSize * 0.58 + bob + facingOffset[1] * armLength * 0.25)
+      .stroke({ color: 0xffffff, alpha: 0.7, width: Math.max(2, tileSize * 0.08) });
+    this.playerLayer.label = `${player.spriteSheet.id}:${spriteFrame.sourceX},${spriteFrame.sourceY}`;
   }
 
   private renderDebugOverlay(): void {
