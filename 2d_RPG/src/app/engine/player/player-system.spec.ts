@@ -20,8 +20,11 @@ function createMap(): GameMap {
         cells: Array.from({ length: 36 }, () => ({ tileId: null, collision: false })),
       },
     ],
-    collisionObjects: [{ id: 'rock', name: 'Rock', column: 3, row: 2, width: 1, height: 1, blocksMovement: true }],
+    collisionObjects: [
+      { id: 'rock', name: 'Rock', column: 3, row: 2, width: 1, height: 1, blocksMovement: true },
+    ],
     npcs: [],
+    entities: [],
     specialRegions: [],
   };
 }
