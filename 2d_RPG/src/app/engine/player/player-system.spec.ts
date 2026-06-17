@@ -3,6 +3,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { CollisionSystem } from '../collision/collision-system';
 import { PlayerSystem } from './player-system';
 import { GameMap } from '../../shared/models/map';
+import { getCharacterSpriteFrame } from '../../shared/models/player';
 
 function createMap(): GameMap {
   return {
@@ -59,5 +60,33 @@ describe('PlayerSystem', () => {
     expect(playerSystem.player().column).toBe(2);
     expect(playerSystem.player().moving).toBe(false);
     expect(playerSystem.player().animation).toBe('idle');
+  });
+
+  it('returns to idle when movement keys are released', () => {
+    playerSystem.handleKeyDown(new KeyboardEvent('keydown', { code: 'ArrowDown' }));
+    playerSystem.update(250, createMap(), []);
+    playerSystem.handleKeyUp(new KeyboardEvent('keyup', { code: 'ArrowDown' }));
+    playerSystem.update(250, createMap(), []);
+
+    expect(playerSystem.player().moving).toBe(false);
+    expect(playerSystem.player().running).toBe(false);
+    expect(playerSystem.player().animation).toBe('idle');
+    expect(playerSystem.player().direction).toBe('down');
+  });
+
+  it('plays a non-looping attack animation from the sprite sheet', () => {
+    playerSystem.handleKeyDown(new KeyboardEvent('keydown', { code: 'Space' }));
+    playerSystem.update(16, createMap(), []);
+
+    expect(playerSystem.player().animation).toBe('attack');
+    expect(playerSystem.player().moving).toBe(false);
+    expect(getCharacterSpriteFrame(playerSystem.player()).sourceY).toBe(384);
+
+    playerSystem.update(110, createMap(), []);
+    playerSystem.update(110, createMap(), []);
+    playerSystem.update(110, createMap(), []);
+
+    expect(playerSystem.player().animation).toBe('idle');
+    expect(playerSystem.player().animationFrame).toBe(0);
   });
 });
