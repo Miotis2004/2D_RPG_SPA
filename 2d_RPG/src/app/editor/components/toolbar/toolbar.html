@@ -1,0 +1,16 @@
+<nav class="toolbar" aria-label="Editor tools">
+  <strong>RPG Forge</strong>
+  <div class="toolbar__tools">
+    @for (tool of tools; track tool.id) {
+      <button
+        type="button"
+        [class.toolbar__button--active]="editorState.activeTool() === tool.id"
+        class="toolbar__button"
+        (click)="editorState.setActiveTool(tool.id)"
+      >
+        <span>{{ tool.label }}</span>
+        <kbd>{{ tool.shortcut }}</kbd>
+      </button>
+    }
+  </div>
+</nav>

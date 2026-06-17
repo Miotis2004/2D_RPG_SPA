@@ -1,0 +1,16 @@
+<app-docking-panel title="Property Inspector" subtitle="Selection details">
+  <dl class="properties">
+    <div>
+      <dt>Active tool</dt>
+      <dd>{{ editorState.activeTool() }}</dd>
+    </div>
+    <div>
+      <dt>Selected asset</dt>
+      <dd>{{ editorState.selectedAssetId() }}</dd>
+    </div>
+    <div>
+      <dt>Viewport zoom</dt>
+      <dd>{{ editorState.zoom() * 100 }}%</dd>
+    </div>
+  </dl>
+</app-docking-panel>

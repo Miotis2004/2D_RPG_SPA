@@ -1,0 +1,15 @@
+<app-docking-panel title="Asset Browser" subtitle="Project files">
+  <div class="asset-list">
+    @for (asset of assets; track asset.id) {
+      <button
+        type="button"
+        class="asset-list__item"
+        [class.asset-list__item--active]="editorState.selectedAssetId() === asset.id"
+        (click)="editorState.selectAsset(asset.id)"
+      >
+        <span>{{ asset.name }}</span>
+        <small>{{ asset.type }}</small>
+      </button>
+    }
+  </div>
+</app-docking-panel>

@@ -1,0 +1,26 @@
+.asset-list {
+  display: grid;
+  gap: 0.65rem;
+
+  &__item {
+    display: grid;
+    gap: 0.2rem;
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    text-align: left;
+    background: rgb(255 255 255 / 4%);
+    cursor: pointer;
+  }
+
+  &__item--active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  small {
+    color: var(--text-muted);
+  }
+}
