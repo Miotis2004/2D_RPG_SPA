@@ -8,10 +8,21 @@
   background: #101626;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 3%);
 
-  canvas {
-    display: block;
+  &__host {
     width: 100%;
     height: 100%;
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
   }
 
   &__hud {

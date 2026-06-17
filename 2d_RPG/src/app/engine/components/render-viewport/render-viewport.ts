@@ -1,71 +1,86 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { EditorStateService } from '../../../core/state/editor-state.service';
+import { Renderer, RendererSnapshot } from '../../rendering/renderer';
 
 @Component({
   selector: 'app-render-viewport',
+  imports: [DecimalPipe],
   templateUrl: './render-viewport.html',
   styleUrl: './render-viewport.scss',
 })
 export class RenderViewport implements AfterViewInit, OnDestroy {
-  @ViewChild('viewportCanvas', { static: true }) private readonly viewportCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('viewportHost', { static: true })
+  private readonly viewportHost!: ElementRef<HTMLElement>;
 
   protected readonly editorState = inject(EditorStateService);
-  private animationFrame = 0;
-  private context?: CanvasRenderingContext2D;
+  protected readonly rendererSnapshot = signal<RendererSnapshot>({
+    cameraX: 0,
+    cameraY: 0,
+    zoom: 1,
+    visibleTiles: 0,
+  });
+  private readonly renderer = new Renderer();
+  private readonly resizeObserver = new ResizeObserver(() => this.renderer.resize());
+  private pointerId?: number;
+  private lastPointer?: { readonly x: number; readonly y: number };
 
-  ngAfterViewInit(): void {
-    const canvas = this.viewportCanvas.nativeElement;
-    this.context = canvas.getContext('2d') ?? undefined;
-    this.resizeCanvas();
-    this.renderPreview();
+  async ngAfterViewInit(): Promise<void> {
+    const host = this.viewportHost.nativeElement;
+    await this.renderer.initialize(host);
+    this.resizeObserver.observe(host);
+    this.syncSnapshot();
   }
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.animationFrame);
+    this.resizeObserver.disconnect();
+    this.renderer.destroy();
   }
 
-  private resizeCanvas(): void {
-    const canvas = this.viewportCanvas.nativeElement;
-    const bounds = canvas.getBoundingClientRect();
-    canvas.width = Math.max(1, Math.floor(bounds.width * window.devicePixelRatio));
-    canvas.height = Math.max(1, Math.floor(bounds.height * window.devicePixelRatio));
+  protected startPan(event: PointerEvent): void {
+    this.pointerId = event.pointerId;
+    this.lastPointer = { x: event.clientX, y: event.clientY };
+    this.viewportHost.nativeElement.setPointerCapture(event.pointerId);
   }
 
-  private renderPreview(): void {
-    if (!this.context) {
+  protected pan(event: PointerEvent): void {
+    if (this.pointerId !== event.pointerId || !this.lastPointer) {
       return;
     }
 
-    const canvas = this.viewportCanvas.nativeElement;
-    const context = this.context;
-    const tileSize = 32 * window.devicePixelRatio;
+    const deltaX = this.lastPointer.x - event.clientX;
+    const deltaY = this.lastPointer.y - event.clientY;
+    this.lastPointer = { x: event.clientX, y: event.clientY };
+    this.rendererSnapshot.set(this.renderer.pan(deltaX, deltaY));
+  }
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#101626';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let x = 0; x < canvas.width; x += tileSize) {
-      for (let y = 0; y < canvas.height; y += tileSize) {
-        context.fillStyle = (x / tileSize + y / tileSize) % 2 === 0 ? '#1b7f4c' : '#23633f';
-        context.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
-      }
+  protected stopPan(event: PointerEvent): void {
+    if (this.pointerId === event.pointerId) {
+      this.pointerId = undefined;
+      this.lastPointer = undefined;
     }
+  }
 
-    context.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-    context.lineWidth = window.devicePixelRatio;
-    for (let x = 0; x < canvas.width; x += tileSize) {
-      context.beginPath();
-      context.moveTo(x, 0);
-      context.lineTo(x, canvas.height);
-      context.stroke();
-    }
-    for (let y = 0; y < canvas.height; y += tileSize) {
-      context.beginPath();
-      context.moveTo(0, y);
-      context.lineTo(canvas.width, y);
-      context.stroke();
-    }
+  protected zoom(event: WheelEvent): void {
+    event.preventDefault();
+    const bounds = this.viewportHost.nativeElement.getBoundingClientRect();
+    const snapshot = this.renderer.zoomAt(event.deltaY, {
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+    this.rendererSnapshot.set(snapshot);
+    this.editorState.setZoom(Math.round(snapshot.zoom * 100) / 100);
+  }
 
-    this.animationFrame = requestAnimationFrame(() => this.renderPreview());
+  private syncSnapshot(): void {
+    this.rendererSnapshot.set(this.renderer.currentSnapshot());
   }
 }
